@@ -192,12 +192,12 @@ export async function duplicateCv(
     title: `${source.title} (copy)`.slice(0, 120),
     data: source.data,
     settings: source.settings,
-    sourceFileName: source.source_file_name,
-    sourceFileType: source.source_file_type,
-    sourceFileSize: source.source_file_size,
     extractionStatus: source.extraction_status,
-    // The original file is not copied; the duplicate starts without a private attachment.
+    // The original file is not copied; the duplicate starts without an attachment.
     sourceFilePath: null,
+    sourceFileName: null,
+    sourceFileType: null,
+    sourceFileSize: null,
   });
 }
 

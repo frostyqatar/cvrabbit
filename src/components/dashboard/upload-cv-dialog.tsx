@@ -124,6 +124,8 @@ export function UploadCvDialog({
         ? "application/pdf"
         : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+    let created = false;
+
     try {
       const { error: uploadError } = await supabase.storage
         .from("cv-originals")
@@ -137,7 +139,6 @@ export function UploadCvDialog({
         );
       }
 
-      setCvId(id);
       setProgress(22);
       setMessage("Setting up your private CV record…");
 
@@ -152,6 +153,8 @@ export function UploadCvDialog({
         extractionStatus: "processing",
       });
 
+      created = true;
+      setCvId(id);
       setProgress(34);
       const extraction = await extractCvFile(selected, (nextMessage) => {
         setMessage(nextMessage);
@@ -187,11 +190,17 @@ export function UploadCvDialog({
       setError(messageText);
       setStep("error");
 
-      if (cvId || id) {
+      if (created) {
         try {
           await updateExtractionStatus(supabase, userId, id, "failed");
         } catch {
-          // The record may not exist if creation failed.
+          // The record still exists; the editor can be used manually.
+        }
+      } else {
+        try {
+          await supabase.storage.from("cv-originals").remove([path]);
+        } catch {
+          // Best-effort cleanup for an upload that never became a CV record.
         }
       }
     }

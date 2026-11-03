@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Sign in",
   description: "Sign in to CVRabbit with Google.",
+  robots: { index: false, follow: false },
 };
 
 function safeNext(value: string | undefined): string {

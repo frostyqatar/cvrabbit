@@ -214,7 +214,9 @@ export function useAutosave({
       const current = signature(state);
       if (current === savedSignatureRef.current) return;
 
-      setStatus("saving");
+      setStatus(
+        typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "saving",
+      );
       scheduleSave();
       if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
       draftTimerRef.current = setTimeout(writeDraft, 500);
