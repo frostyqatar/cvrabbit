@@ -122,6 +122,14 @@ function tryParse(text: string): unknown | undefined {
 }
 
 function unwrapCv(value: unknown): unknown {
+  if (typeof value === "string") {
+    try {
+      return unwrapCv(JSON.parse(value));
+    } catch {
+      return value;
+    }
+  }
+
   if (Array.isArray(value)) {
     const object = value.find((item) => isRecord(item));
     return object ? unwrapCv(object) : value;

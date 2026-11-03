@@ -218,7 +218,7 @@ export default async function LandingPage() {
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Check className="size-3.5 text-success" strokeWidth={2.5} />
-                  No AI rewriting
+                  AI optional
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Check className="size-3.5 text-success" strokeWidth={2.5} />
@@ -247,9 +247,9 @@ export default async function LandingPage() {
                   <span className="italic text-jet">Edit with clarity.</span>
                 </h2>
                 <p className="mt-4 max-w-sm text-sm leading-relaxed text-charcoal">
-                  No blank-page anxiety and no automated rewrites. CVRabbit reads your
-                  existing CV, puts its contents into editable sections, and leaves every
-                  decision to you.
+                  No blank-page anxiety. CVRabbit reads your existing CV, puts its contents
+                  into editable sections, and leaves every decision to you — with an optional
+                  AI rewrite using your own provider key.
                 </p>
               </div>
 
@@ -258,7 +258,7 @@ export default async function LandingPage() {
                   {
                     icon: FileUp,
                     title: "Bring your CV",
-                    body: "Drop in a PDF or DOCX. We extract the text and organise it into clear sections — you review every detail before it is saved.",
+                    body: "Drop in a PDF or DOCX. We extract the text and organise it into clear sections — or connect your own OpenAI, Claude, DeepSeek, or Gemini key for a faithful rewrite. You review every detail before it is saved.",
                   },
                   {
                     icon: SlidersHorizontal,
@@ -415,8 +415,8 @@ export default async function LandingPage() {
                   body: "Deleting a CV removes the record and its stored original. Nothing is archived behind the scenes.",
                 },
                 {
-                  title: "No AI rewriting",
-                  body: "Your words stay your words. Extraction only reorganises what is already there.",
+                  title: "AI is optional",
+                  body: "Local extraction never invents content. If you want stronger wording, connect your own provider key — only the extracted text is sent, and the key is never stored.",
                 },
               ].map((item) => (
                 <div

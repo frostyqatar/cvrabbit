@@ -662,7 +662,10 @@ export function UploadCvDialog({
               onProviderChange={handleProviderChange}
               onModelChange={setAiModel}
               onApiKeyChange={setApiKey}
-              onRememberChange={setRememberKey}
+              onRememberChange={(next) => {
+                setRememberKey(next);
+                if (!next) clearStoredAiKey();
+              }}
               onBack={() => {
                 setMode("local");
                 setError("");
