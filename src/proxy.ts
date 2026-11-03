@@ -1,11 +1,39 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/supabase/config";
+import {
+  SITE_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  isSupabaseConfigured,
+} from "@/lib/supabase/config";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/cv"];
 
+function canonicalHost(): string {
+  if (!SITE_URL) return "";
+  try {
+    return new URL(SITE_URL).host;
+  } catch {
+    return "";
+  }
+}
+
+const CANONICAL_HOST = canonicalHost();
+
 export async function proxy(request: NextRequest) {
+  // Keep the PKCE verifier cookie and Supabase's redirect allow-list on one
+  // canonical production host. Deployment-specific URLs otherwise break OAuth.
+  if (process.env.VERCEL_ENV === "production" && CANONICAL_HOST) {
+    const host = request.headers.get("host")?.split(":")[0] ?? "";
+    if (host && host !== CANONICAL_HOST && host.endsWith(".vercel.app")) {
+      const url = request.nextUrl.clone();
+      url.protocol = "https:";
+      url.host = CANONICAL_HOST;
+      return NextResponse.redirect(url, 308);
+    }
+  }
+
   if (!isSupabaseConfigured()) {
     return NextResponse.next();
   }

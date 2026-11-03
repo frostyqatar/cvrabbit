@@ -87,6 +87,8 @@ Then add your Google OAuth client ID and secret in Supabase. The app uses PKCE a
 
 If Google is not enabled, the login screen explains the problem and offers the email fallback instead of failing silently.
 
+**Mobile sign-in checklist.** Google refuses OAuth inside many embedded webviews (WhatsApp, Instagram, Facebook, LinkedIn). Open `https://cvrabbit.vercel.app` directly in Safari or Chrome. If Google shows “Access blocked” or “Error 403: access_denied”, the OAuth consent screen is still in **Testing**: in Google Cloud → APIs & Services → OAuth consent screen, either add the Google account as a **test user** or publish the app (the `email` and `profile` scopes do not require verification). Do not copy the `https://<ref>.supabase.co/auth/v1/authorize?...` URL into another browser — the PKCE verifier is stored in the browser that started the flow.
+
 ### 5. Run
 
 ```bash

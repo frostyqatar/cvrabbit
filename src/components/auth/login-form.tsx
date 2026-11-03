@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { AlertCircle, ArrowLeft, Check, Loader2, Mail } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
+import { AlertCircle, AlertTriangle, ArrowLeft, Check, Copy, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 
 import { GoogleIcon } from "@/components/brand/logo";
@@ -9,10 +9,46 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { googleSignInMayBeBlocked } from "@/lib/browser";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isEmail } from "@/lib/utils";
 
 type Status = "idle" | "google" | "email" | "sent";
+
+const noopSubscribe = () => () => {};
+
+function friendlyAuthError(message?: string | null): string {
+  if (!message) return "";
+  const value = message.toLowerCase();
+
+  if (
+    value.includes("code verifier") ||
+    value.includes("flow state") ||
+    value.includes("pkce") ||
+    value.includes("missing_code")
+  ) {
+    return "The sign-in hand-off was interrupted by this browser. Open cvrabbit.vercel.app in Safari or Chrome (not inside WhatsApp, Instagram, or another app) and try again.";
+  }
+  if (
+    value.includes("access_denied") ||
+    value.includes("access blocked") ||
+    value.includes("disallowed_useragent")
+  ) {
+    return "Google blocked or cancelled the sign-in. If you saw “Access blocked”, the Google account on this phone may not be a test user for the OAuth app — add it in Google Cloud → OAuth consent screen, or publish the app. You can also use the email link below.";
+  }
+  if (value.includes("redirect_uri_mismatch")) {
+    return "Google rejected the redirect URL. Add https://cpjxavwhlwnxejacbwnc.supabase.co/auth/v1/callback to the OAuth client’s authorised redirect URIs.";
+  }
+  if (value.includes("provider is not enabled") || value.includes("not enabled")) {
+    return "Google sign-in is not enabled for this Supabase project. Use the email link below, or enable the Google provider in Supabase.";
+  }
+  if (value.includes("invalid flow state") || value.includes("both auth code")) {
+    return "This browser lost the sign-in state. Open cvrabbit.vercel.app in Safari or Chrome and try again.";
+  }
+
+  return message;
+}
+
 
 export function LoginForm({
   configured,
@@ -24,9 +60,26 @@ export function LoginForm({
   nextPath: string;
 }) {
   const [status, setStatus] = useState<Status>("idle");
-  const [error, setError] = useState(initialError ?? "");
+  const [error, setError] = useState(friendlyAuthError(initialError));
   const [email, setEmail] = useState("");
   const [magicOpen, setMagicOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const embeddedBrowser = useSyncExternalStore(
+    noopSubscribe,
+    googleSignInMayBeBlocked,
+    () => false,
+  );
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // Clipboard can be blocked; the address is still visible in the browser.
+    }
+  };
+
 
   const callbackUrl = () => {
     const origin = window.location.origin;
@@ -55,7 +108,7 @@ export function LoginForm({
           );
           setMagicOpen(true);
         } else {
-          setError(oauthError.message);
+          setError(friendlyAuthError(oauthError.message));
         }
         setStatus("idle");
       }
@@ -87,7 +140,7 @@ export function LoginForm({
       });
 
       if (otpError) {
-        setError(otpError.message);
+        setError(friendlyAuthError(otpError.message));
         setStatus("idle");
         return;
       }
@@ -110,7 +163,8 @@ export function LoginForm({
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-charcoal">
           We sent a sign-in link to <span className="font-semibold text-onyx">{email}</span>.
-          It expires shortly, so open it on this device when you are ready.
+          Open it on this device in the same browser you are using now. If it opens in a
+          different app, come back here and request a new link.
         </p>
         <Button
           variant="outline"
@@ -158,6 +212,28 @@ export function LoginForm({
         >
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <p className="leading-relaxed">{error}</p>
+        </div>
+      ) : null}
+
+      {embeddedBrowser ? (
+        <div className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-3.5 text-[0.78rem] leading-relaxed text-charcoal">
+          <p className="flex items-center gap-2 font-semibold text-onyx">
+            <AlertTriangle className="size-4 shrink-0 text-warning" />
+            Google cannot sign in inside this app&apos;s browser
+          </p>
+          <p className="mt-1.5">
+            You opened CVRabbit inside WhatsApp, Instagram, or another app. Google blocks
+            sign-in in these embedded browsers. Open the site in Safari or Chrome, then tap
+            Continue with Google — or use the email link below, which works here.
+          </p>
+          <button
+            type="button"
+            onClick={() => void copyLink()}
+            className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-onyx/15 bg-white px-2.5 py-1.5 text-[0.7rem] font-semibold text-jet transition-colors hover:bg-mint"
+          >
+            {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+            {copied ? "Link copied" : "Copy cvrabbit.vercel.app"}
+          </button>
         </div>
       ) : null}
 

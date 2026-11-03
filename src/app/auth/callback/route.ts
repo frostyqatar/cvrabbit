@@ -12,13 +12,17 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = safeNext(searchParams.get("next"));
-  const errorDescription = searchParams.get("error_description");
+  const errorDescription =
+    searchParams.get("error_description") ??
+    searchParams.get("error_code") ??
+    searchParams.get("error");
 
   if (!isSupabaseConfigured()) {
     return NextResponse.redirect(`${origin}/login?error=not_configured`);
   }
 
   if (errorDescription) {
+    console.warn("[auth/callback] provider error", errorDescription);
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(errorDescription)}`,
     );
@@ -32,6 +36,7 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
+    console.warn("[auth/callback] exchange failed", error.message);
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(error.message)}`,
     );
