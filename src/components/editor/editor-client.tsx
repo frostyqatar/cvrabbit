@@ -26,6 +26,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 import { AdditionalSection } from "./additional-section";
+import { ClearAllFields } from "./clear-all-fields";
 import { EducationSection } from "./education-section";
 import { ExperienceSection } from "./experience-section";
 import { GenerateCvDialog } from "./generate-dialog";
@@ -278,10 +279,13 @@ function EditorInner({ cv, userId }: { cv: CvRecord; userId: string }) {
               </p>
             </div>
           </div>
-          <Button onClick={() => setGenerateOpen(true)} className="w-full gap-1.5 sm:w-auto">
-            <FileDown className="size-4" />
-            Generate CV
-          </Button>
+          <div className="flex w-full flex-col items-stretch gap-2.5 sm:w-auto sm:items-end">
+            <Button onClick={() => setGenerateOpen(true)} className="w-full gap-1.5 sm:w-auto">
+              <FileDown className="size-4" />
+              Generate CV
+            </Button>
+            <ClearAllFields />
+          </div>
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-2 text-[0.66rem] text-charcoal/45">

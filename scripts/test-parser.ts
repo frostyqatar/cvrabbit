@@ -58,6 +58,14 @@ const cases = [
     minSkills: 1,
     minAdditional: 0,
   },
+  {
+    file: "fixtures/wrapped-cv.pdf",
+    name: "Aisha Rahman",
+    minExperience: 1,
+    minEducation: 2,
+    minSkills: 1,
+    minAdditional: 1,
+  },
 ];
 
 async function main() {
@@ -114,6 +122,46 @@ for (const testCase of cases) {
         bullets: result.data.experience[0].responsibilities.length + result.data.experience[0].achievements.length,
       })}`,
     );
+  }
+
+  if (testCase.file.includes("wrapped")) {
+    const institutionNames = result.data.education.map((entry) => entry.institution);
+    const additionalItems = result.data.additional.reduce(
+      (total, section) => total + section.items.length,
+      0,
+    );
+    const skillsFlat = result.data.skills.flatMap((category) => [
+      category.name,
+      ...category.skills.map((skill) => skill.name),
+    ]);
+
+    check(
+      "wrapped education institutions",
+      institutionNames.filter((name) =>
+        /Northlake|Cedar|Westbridge/.test(name),
+      ).length,
+      2,
+    );
+    if (additionalItems > 6) {
+      console.error(`  FAIL wrapped courses were split too finely: ${additionalItems} items`);
+      failures += 1;
+    } else {
+      console.log(`  ok wrapped courses grouped: ${additionalItems} items`);
+    }
+    if (!skillsFlat.includes("Web Development")) {
+      console.error("  FAIL core qualifications were not parsed as skills");
+      failures += 1;
+    } else {
+      console.log("  ok core qualifications parsed");
+    }
+    if (result.data.personal.professionalTitle !== "PMP") {
+      console.error(
+        `  FAIL credential title: expected PMP, got "${result.data.personal.professionalTitle}"`,
+      );
+      failures += 1;
+    } else {
+      console.log("  ok credential title");
+    }
   }
 }
 

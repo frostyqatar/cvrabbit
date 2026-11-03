@@ -13,8 +13,10 @@ import {
   Pencil,
   Plus,
   ShieldCheck,
+  Sparkles,
   Trash2,
   Upload,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -66,6 +68,8 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
   const supabase = getSupabaseBrowserClient();
   const [cvs, setCvs] = useState<CvSummary[]>(initialCvs);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"upload" | "ai">("upload");
+  const [uploadSession, setUploadSession] = useState(0);
   const [creating, setCreating] = useState(false);
   const [renameTarget, setRenameTarget] = useState<CvSummary | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -93,6 +97,12 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
     void createNew();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoNew]);
+
+  const openUpload = (nextMode: "upload" | "ai") => {
+    setUploadMode(nextMode);
+    setUploadSession((current) => current + 1);
+    setUploadOpen(true);
+  };
 
   const handleCreated = (record: CvRecord) => {
     setCvs((current) => [
@@ -183,14 +193,26 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
           </h1>
           <p className="mt-2 text-sm text-charcoal">
             {cvs.length === 0
-              ? "Start with the CV you already have, or with a clean page."
+              ? "Start with the CV you already have, let AI polish it, or begin with a clean page."
               : `${cvs.length} ${cvs.length === 1 ? "CV" : "CVs"}, each private to your account.`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setUploadOpen(true)} className="gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => openUpload("upload")}
+            className="gap-2"
+          >
             <Upload className="size-4" />
             Upload CV
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => openUpload("ai")}
+            className="gap-2 border-jet/30 bg-jet text-mint hover:bg-jet/90 hover:text-mint"
+          >
+            <Sparkles className="size-4" />
+            AI import
           </Button>
           <Button onClick={() => void createNew()} disabled={creating} className="gap-2">
             {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
@@ -200,29 +222,29 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
       </div>
 
       {cvs.length === 0 ? (
-        <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="mt-8 grid gap-4 lg:grid-cols-3">
           <div
             role="button"
             tabIndex={0}
-            onClick={() => setUploadOpen(true)}
+            onClick={() => openUpload("upload")}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                setUploadOpen(true);
+                openUpload("upload");
               }
             }}
-            className="group flex min-h-[19rem] cursor-pointer flex-col items-start justify-between rounded-2xl border border-dashed border-onyx/15 bg-white/60 p-6 text-left transition-[border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-steel hover:bg-white sm:p-8"
+            className="group flex min-h-[19rem] cursor-pointer flex-col items-start justify-between rounded-2xl border border-dashed border-onyx/15 bg-white/60 p-6 text-left transition-[border-color,background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-steel hover:bg-white sm:p-7"
           >
-            <div className="flex size-12 items-center justify-center rounded-xl bg-jet text-mint shadow-soft">
+            <div className="flex size-11 items-center justify-center rounded-xl bg-jet text-mint shadow-soft">
               <Upload className="size-5" />
             </div>
             <div className="mt-8">
-              <h2 className="font-serif text-2xl tracking-[-0.01em] text-onyx">
+              <h2 className="font-serif text-[1.6rem] leading-tight tracking-[-0.01em] text-onyx">
                 Bring your existing CV
               </h2>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-charcoal">
-                Drop in a PDF or DOCX. We will read it on your device, organise the text into
-                sections, and let you correct every detail.
+                Drop in a PDF or DOCX. We read it on your device and organise the text into
+                sections without inventing anything.
               </p>
               <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-jet">
                 Choose a file
@@ -231,12 +253,59 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
             </div>
           </div>
 
-          <div className="flex flex-col justify-between rounded-2xl border border-onyx/10 bg-white p-6 shadow-soft sm:p-8">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openUpload("ai")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openUpload("ai");
+              }
+            }}
+            className="group relative flex min-h-[19rem] cursor-pointer flex-col items-start justify-between overflow-hidden rounded-2xl border border-jet/30 bg-jet p-6 text-left text-mint shadow-soft transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lift sm:p-7"
+          >
+            <span className="pointer-events-none absolute -top-16 -right-12 size-44 rounded-full bg-steel/15 blur-2xl" />
+            <div className="relative flex w-full items-start justify-between gap-2">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-mint/15 text-mint">
+                <Wand2 className="size-5" />
+              </div>
+              <span className="rounded-full border border-mint/20 bg-mint/10 px-2.5 py-1 text-[0.58rem] font-bold tracking-[0.12em] text-mint/85 uppercase">
+                Optional
+              </span>
+            </div>
+            <div className="relative mt-8">
+              <h2 className="flex items-center gap-1.5 font-serif text-[1.6rem] leading-tight tracking-[-0.01em]">
+                Let AI do the work
+                <Sparkles className="size-4 text-mint/70" />
+              </h2>
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-mint/70">
+                Use your own OpenAI, Claude, DeepSeek or Gemini key. We rewrite the wording and
+                fill every field, then you review it line by line.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {["OpenAI", "Claude", "DeepSeek", "Gemini"].map((provider) => (
+                  <span
+                    key={provider}
+                    className="rounded-full border border-mint/15 bg-mint/10 px-2 py-0.5 text-[0.6rem] font-semibold text-mint/75"
+                  >
+                    {provider}
+                  </span>
+                ))}
+              </div>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-mint">
+                Choose a provider
+                <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </span>
+            </div>
+          </div>
+
+          <div className="flex min-h-[19rem] flex-col justify-between rounded-2xl border border-onyx/10 bg-white p-6 shadow-soft sm:p-7">
             <div>
               <span className="flex size-10 items-center justify-center rounded-xl border border-onyx/10 bg-mint text-jet">
                 <Pencil className="size-4" />
               </span>
-              <h2 className="mt-5 font-serif text-2xl tracking-[-0.01em] text-onyx">
+              <h2 className="mt-5 font-serif text-[1.6rem] leading-tight tracking-[-0.01em] text-onyx">
                 Or start from scratch
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-charcoal">
@@ -255,7 +324,7 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-onyx/10 bg-mint/50 p-5 lg:col-span-2">
+          <div className="rounded-2xl border border-onyx/10 bg-mint/50 p-5 lg:col-span-3">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.72rem] text-charcoal">
               <span className="inline-flex items-center gap-1.5">
                 <ShieldCheck className="size-3.5 text-steel" />
@@ -267,7 +336,7 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Check className="size-3.5 text-success" strokeWidth={2.5} />
-                Nothing is invented during extraction
+                AI keys are never stored on our servers
               </span>
             </div>
           </div>
@@ -360,7 +429,7 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
 
           <button
             type="button"
-            onClick={() => setUploadOpen(true)}
+            onClick={() => openUpload("upload")}
             className="flex min-h-[16rem] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-onyx/15 bg-white/40 p-6 text-center transition-colors duration-150 hover:border-steel hover:bg-white/70"
           >
             <span className="flex size-10 items-center justify-center rounded-full border border-onyx/10 bg-white text-jet">
@@ -385,10 +454,12 @@ export function DashboardClient({ userId, initialCvs, autoNew = false }: Dashboa
       </div>
 
       <UploadCvDialog
+        key={`${uploadMode}-${uploadSession}`}
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         userId={userId}
         onCreated={handleCreated}
+        initialMode={uploadMode}
       />
 
       <Dialog open={Boolean(renameTarget)} onOpenChange={(open) => !open && setRenameTarget(null)}>

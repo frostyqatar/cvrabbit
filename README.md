@@ -2,7 +2,7 @@
 
 A private, mobile-first CV editor and PDF generator. Upload an existing PDF or DOCX, review the extracted sections, refine them in a calm structured editor, and generate a polished A4 PDF from seven distinct designs.
 
-CVRabbit is not an AI CV writer. It does not invent, rewrite, or suggest content. Extraction only reorganises text that is already in the uploaded document.
+Extraction never invents content. As an optional extra, you can connect your own OpenAI, Claude, DeepSeek, or Gemini key and let that model rewrite the extracted text into stronger, cleaner sections. CVRabbit does not supply the model, store your key, or keep the result anywhere except your own private CV record.
 
 ---
 
@@ -13,6 +13,8 @@ CVRabbit is not an AI CV writer. It does not invent, rewrite, or suggest content
 - **Private original-file storage** in a non-public Supabase Storage bucket.
 - **Automatic saving** with debounced writes, offline detection, retry backoff, and a local recovery copy.
 - **Multiple CVs** per account: create, upload, rename, duplicate, switch, and delete.
+- **Optional AI-assisted import** with your own provider key: choose OpenAI, Claude, DeepSeek, or Gemini, then get a rewritten, fully structured CV that preserves every fact.
+- **Clear all fields** with two separate confirmation dialogs.
 - **Structured editor** for personal details, unlimited experience and education entries, nested skill categories → skills → tasks, and optional additional sections.
 - **Seven PDF templates**: Classic Professional, Modern Minimalist, Executive, Corporate, Creative, Compact, and ATS-Friendly.
 - **Live PDF preview** generated from the same document component as the download, so the preview and file match.
@@ -44,12 +46,12 @@ CVRabbit is not an AI CV writer. It does not invent, rewrite, or suggest content
 npm install
 ```
 
-### 2. Connect the existing CRGT Supabase project
+### 2. Connect the CVRabbit Supabase project
 
 Create `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://<crgt-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://cpjxavwhlwnxejacbwnc.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-or-publishable-key>
 ```
 
@@ -57,7 +59,7 @@ Do not add a service-role key to the browser build. The app only uses the public
 
 ### 3. Apply the schema
 
-Open the Supabase SQL editor for the **CRGT** project and run:
+Open the Supabase SQL editor for the **CVRabbit** project and run:
 
 `supabase/migrations/20261103000100_cvrabbit_init.sql`
 
@@ -73,7 +75,7 @@ The bucket is private. CVRabbit never calls `getPublicUrl` for uploaded original
 
 ### 4. Authentication
 
-**Google (primary):** enable the Google provider in the CRGT project's Authentication settings and add the project's callback URL:
+**Google (primary):** enable the Google provider in the CVRabbit project's Authentication settings and add the project's callback URL:
 
 ```
 https://<project-ref>.supabase.co/auth/v1/callback
@@ -128,6 +130,21 @@ The ATS template deliberately avoids letter-spaced headings and decorative rules
 
 ---
 
+## AI-assisted import (optional)
+
+The import dialog offers three paths: read the file locally, let an AI model rewrite it, or start blank. AI import is entirely opt-in and uses the user's own provider account.
+
+- **Providers and models** (verified 3 November 2026): OpenAI GPT-6.1 Terra, GPT-6.1 Sol, GPT-6 Luna; Claude Sonnet 5.5, Haiku 5.5, Opus 5.5; DeepSeek V4.1 Flash and V4 Pro; Gemini 3.8 Flash, Gemini 4 Argon, Gemini 3.5 Flash-Lite.
+- **Bring your own key.** The key is held in memory and, if the user ticks "Keep key in this tab", in `sessionStorage`. It is never written to Postgres, never included in CV rows, and never logged.
+- **Only text leaves the device.** PDF/DOCX parsing still happens in the browser, and only the extracted text is posted to `/api/ai/extract`, which forwards it to the chosen provider. The original file is not sent.
+- **Faithful rewriting.** The system prompt forbids inventing facts, metrics, employers, dates, or skills. It only improves phrasing: action-verb bullets, a factual 45–90 word summary, consistent dates, and clean section grouping.
+- **Token safeguards.** The route requires an authenticated user, throttles to eight imports per ten minutes per account, caps input at 48,000 characters, caps output at 16,000–32,000 tokens depending on the provider, times out after 90 seconds, retries nothing automatically, and allows at most two manual AI attempts per import.
+- **Recoverable output.** Model JSON is repaired rather than discarded: fenced output, leading commentary, unescaped newlines, trailing commas, wrapper objects, and output cut off by the token limit are all salvaged. If the reply is still unusable, the user can finish with the free local reading instead.
+
+AI import never changes the privacy model of the CV itself: the result is saved to the same owner-only `cvs` row and can be edited field by field.
+
+---
+
 ## Automatic saving
 
 `src/lib/editor/use-autosave.ts`:
@@ -156,11 +173,12 @@ npm run test
 
 `npm run test` runs:
 
-1. **Parser tests** against four synthetic PDFs:
+1. **Parser tests** against five synthetic PDFs:
    - one-page simple CV
    - detailed two-page CV
    - long multi-section CV
    - two-column CV
+   - wrapped-line / split-bullet regression CV
 2. **PDF tests** for all seven templates:
    - A4 size
    - selectable text
@@ -183,27 +201,41 @@ The development-only `/design-lab` route provides a visual QA surface for every 
 
 ## Deployment
 
-The app is Vercel-ready.
+Production is deployed on Vercel:
 
-```bash
-vercel --prod
+```
+https://cvrabbit.vercel.app
 ```
 
-Add these environment variables in Vercel:
+The GitHub repository is connected to the Vercel project, so a push to `main` produces a production deployment.
+
+Environment variables in Vercel (Production, Preview, and Development):
 
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
-Then add the production domain to Supabase Authentication → URL Configuration:
+Supabase Authentication → URL Configuration must contain:
 
 ```
-Site URL: https://your-domain.example
-Redirect URLs: https://your-domain.example/auth/callback
+Site URL: https://cvrabbit.vercel.app
+Redirect URLs:
+https://cvrabbit.vercel.app/auth/callback
+https://cvrabbit.vercel.app/auth/confirm
+https://cvrabbit.vercel.app/**
+http://localhost:3000/**
 ```
 
-Google OAuth must also allow the Supabase callback URL. No secrets are committed to the repository.
+`/auth/callback` handles the PKCE code exchange used by Google and the default email link. `/auth/confirm` is a fallback for Supabase email templates that send `{{ .TokenHash }}` directly.
+
+Google OAuth must also allow the Supabase callback URL:
+
+```
+https://cpjxavwhlwnxejacbwnc.supabase.co/auth/v1/callback
+```
+
+No secrets are committed to the repository. AI provider keys belong to each user and are supplied at import time.
 
 ---
 
@@ -215,7 +247,8 @@ Google OAuth must also allow the Supabase callback URL. No secrets are committed
 - Storage object policies allow access only when the first folder equals `auth.uid()`.
 - Deleting a CV removes the original object and the database row.
 - Uploaded files are read on the user's device; only the original file is uploaded for safekeeping.
-- No analytics, advertising, or AI processing is included.
+- No analytics or advertising are included.
+- AI import is opt-in, uses the user's own provider key, and sends only extracted text. Keys are never persisted server-side.
 - Local drafts live in the browser's `localStorage` and are removed after a successful save.
 
 ---
@@ -224,16 +257,17 @@ Google OAuth must also allow the Supabase callback URL. No secrets are committed
 
 ```
 src/
-  app/                 routes for landing, login, dashboard, editor, auth callback
+  app/                 routes for landing, login, dashboard, editor, auth callbacks, AI import API
   components/
     app/               shared application chrome
     auth/              login flow
     brand/             logo and Google mark
-    dashboard/         CV list, upload and extraction review
-    editor/            structured editor, autosave UI, generation panel
+    dashboard/         CV list, upload, AI import setup and extraction review
+    editor/            structured editor, autosave UI, clear-all, generation panel
     templates/         PDF document and visual template thumbnails
     ui/                shadcn-style primitives
   lib/
+    ai/                provider catalogue, prompt, JSON repair, browser client
     cv/                types, parsing, PDF extraction, sample data
     editor/            editor store and autosave hook
     pdf/               fonts, theme tokens, PDF generation
@@ -249,6 +283,7 @@ fixtures/              synthetic test CVs
 ## Known boundaries
 
 - Scanned/image-only PDFs do not contain selectable text. CVRabbit keeps the original file and offers manual entry rather than pretending extraction succeeded.
+- AI import requires the user's own provider key and account credit. Model line-ups change; the catalogue in `src/lib/ai/providers.ts` is the single place to update. Local reading is always available and free.
 - DOCX support covers standard Word documents; legacy `.doc` files are rejected with a clear message.
 - The editor is intentionally not a free-form canvas; it keeps CV data structured so every template can render reliably.
 - PDF generation happens in the browser, which keeps the document on the user's device and avoids a server-side rendering dependency.

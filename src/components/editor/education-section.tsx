@@ -44,6 +44,10 @@ function EducationCard({
   const moveEducation = useEditor((state) => state.moveEducation);
   const dateLabel = formatDateRange(entry.startDate, entry.endDate, entry.current);
   const qualification = [entry.degree.trim(), entry.field.trim()].filter(Boolean).join(" · ");
+  const cardTitle = entry.institution.trim() || entry.degree.trim() || "Institution not added";
+  const cardSubtitle = entry.institution.trim()
+    ? qualification
+    : [entry.field.trim(), entry.location.trim()].filter(Boolean).join(" · ");
 
   return (
     <article
@@ -64,10 +68,10 @@ function EducationCard({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[0.88rem] font-semibold tracking-[-0.01em] text-onyx">
-              {entry.institution.trim() || "Institution not added"}
+              {cardTitle}
             </span>
             <span className="mt-0.5 block truncate text-[0.72rem] text-charcoal/75">
-              {qualification || "Add degree and field of study"}
+              {cardSubtitle || "Add degree and field of study"}
             </span>
             {dateLabel ? (
               <span className="mt-1 block text-[0.65rem] text-muted-foreground">{dateLabel}</span>

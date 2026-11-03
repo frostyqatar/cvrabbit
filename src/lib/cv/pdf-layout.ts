@@ -6,7 +6,7 @@ export interface PdfTextItem {
   hasEOL?: boolean;
 }
 
-function assembleRows(items: PdfTextItem[], pageWidth: number) {
+function assembleRows(items: PdfTextItem[]) {
   interface Row {
     y: number;
     items: PdfTextItem[];
@@ -26,21 +26,10 @@ function assembleRows(items: PdfTextItem[], pageWidth: number) {
 
   rows.sort((a, b) => b.y - a.y);
 
-  let complex = false;
   const lines: string[] = [];
 
   for (const row of rows) {
     row.items.sort((a, b) => a.transform[4] - b.transform[4]);
-
-    for (let index = 1; index < row.items.length; index += 1) {
-      const previous = row.items[index - 1];
-      const current = row.items[index];
-      const gap = current.transform[4] - (previous.transform[4] + previous.width);
-      if (gap > pageWidth * 0.12) {
-        complex = true;
-        break;
-      }
-    }
 
     let line = "";
     for (let index = 0; index < row.items.length; index += 1) {
@@ -68,7 +57,7 @@ function assembleRows(items: PdfTextItem[], pageWidth: number) {
     if (cleaned) lines.push(cleaned);
   }
 
-  return { text: lines.join("\n"), complex };
+  return { text: lines.join("\n"), complex: false };
 }
 
 function splitColumns(items: PdfTextItem[], pageWidth: number): PdfTextItem[][] {
@@ -141,12 +130,12 @@ export function assemblePageText(items: PdfTextItem[], pageWidth: number) {
       .sort((a, b) => b.characters - a.characters);
 
     const text = ranked
-      .map(({ group }) => assembleRows(group, pageWidth).text)
+      .map(({ group }) => assembleRows(group).text)
       .filter(Boolean)
       .join("\n\n");
 
     return { text, complex: true };
   }
 
-  return assembleRows(items, pageWidth);
+  return assembleRows(items);
 }

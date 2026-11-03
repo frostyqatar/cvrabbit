@@ -318,9 +318,72 @@ async function twoColumn() {
   await save(doc, "two-column-cv.pdf");
 }
 
+async function wrapped() {
+  const doc = newDoc();
+  doc.font("Helvetica-Bold").fontSize(22).fillColor("#000f08").text("AISHA RAHMAN, PMP");
+  doc.font("Helvetica").fontSize(8).fillColor("#555555").text(
+    "West Bay, Doha, 303 | M: (+974) 5555 0101 | aisha.rahman@example.com",
+  );
+  doc.moveDown(0.5);
+
+  heading(doc, "Summary");
+  doc.font("Helvetica").fontSize(8.8).fillColor("#333333").text(
+    "Business analyst with experience across infrastructure, security, and application delivery.",
+  );
+
+  heading(doc, "Education");
+  doc.font("Helvetica").fontSize(8.8).fillColor("#333333").text(
+    "Bachelor of Science, Computer Science, Doha, 2011-2015",
+  );
+  doc.text("Northlake University");
+  doc.text("General Engineering, Doha, Cedar Institute of Technology 2010-2011");
+  doc.text("Academic Bridge Program, Doha, Westbridge Foundation 2009-2010");
+  doc.text("Foundation");
+
+  heading(doc, "Courses");
+  doc.text("Microsoft Azure Fundamentals, Certified,");
+  doc.text("Kuwait, Virtual Class");
+  doc.text("June 2020 to June 2020");
+  doc.text("Symantec Endpoint Administrator, Ireland,");
+  doc.text("Virtual Class");
+  doc.text("March 2020 to March 2020");
+  doc.text("Advanced Security Essentials - Enterprise Defender, Doha, Ministry of Transport");
+  doc.text("February 2018 to February 2018");
+
+  heading(doc, "Core Qualifications");
+  doc.text("Web Development:");
+  doc.text("HTML5, CSS, Flask");
+  doc.text("Databases:");
+  doc.text("SQLAlchemy");
+  doc.text("Programming Languages:");
+  doc.text("C++, Python, Java EE, C#");
+  doc.text("Miscellaneous:");
+  doc.text("Microsoft Office Suite, Public speaking, Adobe Director, Multimedia Flash");
+
+  heading(doc, "Experience");
+  doc.font("Helvetica-Bold").fontSize(9.4).fillColor("#111111").text("Systems Engineer, Cedar Energy –");
+  doc.text("Doha");
+  doc.font("Helvetica").fontSize(8.4).fillColor("#555555").text("Apr 2016 to June 2017");
+  doc.font("Helvetica").fontSize(8.8).fillColor("#333333");
+  doc.text("● Key Responsibilities:");
+  doc.text("-");
+  doc.text("Manage and own at least one local solution or service.");
+  doc.text("-");
+  doc.text("Informed of the server systems strategy, infrastructure strategy as well as");
+  doc.text("the overall IS strategy.");
+  doc.text("-");
+  doc.text("Reduced unplanned maintenance by 18% through a revised patching schedule.");
+  doc.text("● Projects:");
+  doc.text("-");
+  doc.text("Migration of the endpoint protection platform across three domains.");
+
+  await save(doc, "wrapped-cv.pdf");
+}
+
 await simple();
 await detailed();
 await longCv();
 await twoColumn();
+await wrapped();
 
 console.log("Fixtures written to", outDir);

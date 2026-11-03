@@ -4,6 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { createStore, useStore, type StoreApi } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+import { createEmptyData } from "@/lib/cv/defaults";
 import { uid } from "@/lib/utils";
 import type {
   AdditionalKind,
@@ -31,6 +32,7 @@ interface EditorState {
   toggleSection: (key: RenderSectionKey) => void;
   moveSection: (key: RenderSectionKey, direction: -1 | 1) => void;
   setData: (data: CvData, settings?: CvSettings) => void;
+  clearAllFields: () => void;
   addExperience: () => string;
   updateExperience: (id: string, patch: Partial<ExperienceEntry>) => void;
   removeExperience: (id: string) => void;
@@ -145,6 +147,11 @@ export function createEditorStore(initial: Pick<CvRecord, "title" | "data" | "se
         set((state) => {
           state.data = data;
           if (settings) state.settings = settings;
+        }),
+
+      clearAllFields: () =>
+        set((state) => {
+          state.data = createEmptyData();
         }),
 
       addExperience: () => {
